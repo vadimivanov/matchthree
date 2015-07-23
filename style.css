@@ -1,0 +1,30 @@
+html, body{
+    margin: 0;
+    padding: 0;
+}
+#field{
+    width: 100px;
+}
+.row{
+    overflow: hidden;
+}
+.row div{
+    width: 20px;
+    height: 20px;
+    float: left;
+}
+.empty{
+    background: white;
+}
+.red{
+    background: red;
+}
+.blue{
+    background: blue;
+}
+.green{
+    background: green;
+}
+.yellow{
+    background: yellow;
+}
