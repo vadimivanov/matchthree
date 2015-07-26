@@ -10,20 +10,22 @@ game.initialize = function () {
         gameMap: null,
         matches: {},
         output: "",
+        item: null,
         colors: ["empty", "red", "green", "blue", "yellow"],
         container: document.createElement('div')
     }
 };
 
-function makeField(arr) {
+function makeField(obj) {
     var x,
         y;
-    if (arr) {
-        for (var i in arr) {
-            game.data.field[arr[i].y][arr[i].x] = 0;
+    if (typeof(obj) === 'object') {
+        if (Object.keys(obj).length > 2) {
+            for (var i in obj) {
+                game.data.field[obj[i].y][obj[i].x] = 0;
+            }
         }
-    }
-    else {
+    } else {
         for (x = 0; x < game.data.fieldSize.width; x++) {
             game.data.field[x] = [];
             for (y = 0; y < game.data.fieldSize.height; y++) {
@@ -31,7 +33,7 @@ function makeField(arr) {
             }
         }
     }
-        console.log('field',game.data.field);
+        console.log('field',game.data.field,obj);
     for (x = 0; x < game.data.fieldSize.width; x++) {
         game.data.output += "\n";
         for (y = 0; y < game.data.fieldSize.height; y++) {
@@ -39,7 +41,7 @@ function makeField(arr) {
         }
 //        console.log('output',game.data.output);
     }
-    formerField();
+
 }
 function formerField() {
     var x,
@@ -48,13 +50,23 @@ function formerField() {
     for (x = 0; x < game.data.fieldSize.width; x++) {
         for (y = 0; y < game.data.fieldSize.height; y++) {
 //            console.log('game.data.field[y][x]',game.data.field[y][x]);
-            if(game.data.field[y][x] == 0){
-                game.data.field[y][x] = game.data.field[y - 1][x];
+            if (game.data.field[y][x] === 0) {
+                result = true;
+                if (y > 0) {
+                    if (game.data.field[y -1][x] !== 0) {
+                        game.data.field[y][x] = game.data.field[y - 1][x];
+                        game.data.field[y - 1][x] = 0;
+                    }
+                } else {
+                    game.data.field[y][x] = Math.floor(4 * Math.random()) + 1;
+                }
             }
         }
     }
 
-    fieldPaint();
+    if (result) {
+        fieldPaint();
+    }
     return result;
 }
 function fieldPaint() {
@@ -63,6 +75,8 @@ function fieldPaint() {
         currentRow,
         currentBlock,
         container = game.data.container;
+        container.innerHTML = "";
+
     for (i = 0; i < game.data.fieldSize.height; i++) {
         currentRow = document.createElement('div');
         currentRow.className = 'row';
@@ -77,6 +91,7 @@ function fieldPaint() {
     game.data.gameMap = document.getElementById('field');
     game.data.gameMap.innerHTML = "";
     game.data.gameMap.appendChild(container);
+    console.log('fieldPaint');
 }
 function checkNearEl(matchesObj) {
     var positionY = matchesObj.y,
@@ -85,55 +100,75 @@ function checkNearEl(matchesObj) {
         topBoard = positionY > 0 ? game.data.field[positionY - 1][positionX] : - 1,
         bottomBoard = positionY < game.data.fieldSize.height - 1 ? game.data.field[positionY + 1][positionX] : - 1,
         leftBoard = positionX > 0 ? game.data.field[positionY][positionX - 1] : - 1,
-        rightBoard =  positionX < game.data.fieldSize.width - 1 ? game.data.field[positionY][positionX + 1] : -1,
+        rightBoard =  positionX < game.data.fieldSize.width - 1 ? game.data.field[positionY][positionX + 1] : - 1,
         foundEl = false;
 
-    if(centralPoint == topBoard && centralPoint == bottomBoard){
+    if (topBoard >= 0 && centralPoint == topBoard && !game.data.matches[positionX + '_' + (positionY - 1)]) {
         game.data.matches[positionX + '_' + (positionY - 1)] = {y: positionY - 1, x: positionX, checked: false};
+        foundEl = true;
+    }
+    if (bottomBoard >= 0 && centralPoint == bottomBoard && !game.data.matches[positionX + '_' + (positionY + 1)]) {
         game.data.matches[positionX + '_' + (positionY + 1)] = {y: positionY + 1, x: positionX, checked: false};
         foundEl = true;
     }
-//    if(centralPoint == bottomBoard){
-//        foundEl = true;
-//    }
-    if(centralPoint == leftBoard && centralPoint ==  rightBoard){
+    if (leftBoard >= 0 && centralPoint == leftBoard && !game.data.matches[(positionX - 1) + '_' + positionY]) {
         game.data.matches[(positionX - 1) + '_' + positionY] = {y: positionY, x: positionX + 1, checked: false};
+        foundEl = true;
+    }
+    if (rightBoard >= 0 && centralPoint ==  rightBoard && !game.data.matches[(positionX + 1) + '_' + positionY]) {
         game.data.matches[(positionX + 1) + '_' + positionY] = {y: positionY, x: positionX + 1, checked: false};
         foundEl = true;
     }
-//    if(centralPoint ==  rightBoard){
-//        foundEl = true;
-//    }
     return foundEl;
 
 }
 function checkMatches(x, y) {
+    var flag = false;
     game.data.matches = [];
-    game.data.matches[x + '_' + y] = {x: x, y: y, checked: false};
+    if(x && y){
+        game.data.matches[x + '_' + y] = {x: x, y: y, checked: false};
+        flag = true;
+    }
 
     for (var i in game.data.matches) {
-       if(checkNearEl(game.data.matches[i])){
-    console.log('checkMatches',game.data.field[y][x],game.data.matches[x + '_' + y]);
-           game.data.matches[i].checked = true;
-           makeField(game.data.matches);
+        flag = false;
+       if (checkNearEl(game.data.matches[i])) {
+           flag = true;
+            console.log('checkMatches',game.data.field[y][x],game.data.matches[x + '_' + y]);
        }
+           game.data.matches[i].checked = true;
+
     }
 }
 function moveEl(e) {
+    var flag = false,
+        x = Math.floor((e.x)/20),
+        y = Math.floor((e.y)/20);
 
+    if (game.data.item) {
+        game.data.item = e.target;
+        game.data.matches[x + '_' + y] = {x: x, y: y, checked: false};
+        console.log('click2',e.target, game.data.item,game.data.field[y][x],game.data.matches);
+        game.data.item = null;
+        game.data.matches = [];
+    } else{
+        game.data.item = e.target;
+        game.data.matches[x + '_' + y] = {x: x, y: y, checked: false};
+        console.log('click1',game.data.item, e.target,game.data.field[y][x], game.data.matches);
+    }
 }
 function crushEl(e) {
     var map = game.data.container,
-        parent = e.target.parentNode,
-        child = e.target,
         clickX = Math.floor((e.x)/20),
         clickY = Math.floor((e.y)/20);
     checkMatches(clickX, clickY);
-
+    makeField(game.data.matches);
+    formerField();
 }
 
 game.initialize();
 makeField();
+fieldPaint();
 document.querySelector('#field').addEventListener('click', function (e) {
     crushEl(e);
 //    moveEl(e)
