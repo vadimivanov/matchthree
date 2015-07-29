@@ -3,7 +3,7 @@ html, body{
     padding: 0;
 }
 #field{
-    width: 100px;
+    width: 200px;
     margin: 20%;
 }
 .row{
@@ -28,4 +28,10 @@ html, body{
 }
 .yellow{
     background: yellow;
+}
+.purple{
+    background: purple;
+}
+.pick{
+    background: gray;
 }
