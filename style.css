@@ -14,6 +14,9 @@ html, body{
     height: 20px;
     float: left;
 }
+.row div::selection{
+    background: greenyellow;
+}
 .empty{
     background: white;
 }

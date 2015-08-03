@@ -18,18 +18,23 @@ game.initialize = function () {
     }
 };
 
+// todo move functions to prototype
+
 function makeField(obj) {
     var x,
-        y;
+        y,
+        cell;
+    // todo correct check for object
     if (typeof(obj) === 'object') {
         if (Object.keys(obj).length >= 3) {
             for (var i in obj) {
-                game.data.field[obj[i].y][obj[i].x] = 0;
-                fieldPaint();
+                cell = obj[i];
+                game.data.field[cell.y][cell.x] = 0;
+                // todo remove redundant calls
+//                fieldPaint();
             }
         }
     } else {
-        console.log('else');
         for (x = 0; x < game.data.fieldSize.width; x++) {
             game.data.field[x] = [];
             for (y = 0; y < game.data.fieldSize.height; y++) {
@@ -37,6 +42,7 @@ function makeField(obj) {
             }
         }
     }
+    fieldPaint();
 //    for (x = 0; x < game.data.fieldSize.width; x++) {
 //        game.data.output += "\n";
 //        for (y = 0; y < game.data.fieldSize.height; y++) {
@@ -49,11 +55,13 @@ function makeField(obj) {
 function shiftElementsOfField() {
     var x,
         y,
-        result = false;
+        // todo remove long names
+        field = game.data.field,
+        fieldHasEmptyCells = false;
     for (x = 0; x < game.data.fieldSize.width; x++) {
         for (y = 0; y < game.data.fieldSize.height; y++) {
             if (game.data.field[y][x] === 0) {
-                result = true;
+                fieldHasEmptyCells = true;
                 if (y > 0) {
                     if (game.data.field[y -1][x] !== 0) {
                         game.data.field[y][x] = game.data.field[y - 1][x];
@@ -65,22 +73,23 @@ function shiftElementsOfField() {
             }
         }
     }
-    if (result) {
+    if (fieldHasEmptyCells) {
         fieldPaint();
     } else {
-        checkAllField();
         clearInterval(game.intervalPainter);
-        console.log(result,game.intervalPainter);
+//        checkAllField();
     }
-    return result;
+    return fieldHasEmptyCells;
 }
 function fieldPaint() {
     var i,
         j,
         currentRow,
         currentBlock,
-        container = game.data.container;
-        container.innerHTML = "";
+        container = game.data.container,
+        tmpContainer = document.createDocumentFragment();
+
+    container.innerHTML = "";
 
     for (i = 0; i < game.data.fieldSize.height; i++) {
         currentRow = document.createElement('div');
@@ -90,51 +99,78 @@ function fieldPaint() {
             currentBlock.className = game.data.colors[game.data.field[i][j]] || 'empty';
             currentRow.appendChild(currentBlock);
         }
-        container.className = 'container';
-        container.appendChild(currentRow);
+
+        tmpContainer.appendChild(currentRow);
     }
+    container.className = 'container';
     game.data.gameMap = document.getElementById('field');
     game.data.gameMap.innerHTML = "";
-    game.data.gameMap.appendChild(container);
+    game.data.gameMap.appendChild(tmpContainer);
 }
 function checkNearEl(matchesObj) {
     var positionY = matchesObj.y,
         positionX = matchesObj.x,
         centralPoint = game.data.field[positionY][positionX],
-        topBoard = positionY > 0 ? game.data.field[positionY - 1][positionX] : - 1,
-        bottomBoard = positionY < game.data.fieldSize.height - 1 ? game.data.field[positionY + 1][positionX] : - 1,
-        leftBoard = positionX > 0 ? game.data.field[positionY][positionX - 1] : - 1,
-        rightBoard =  positionX < game.data.fieldSize.width - 1 ? game.data.field[positionY][positionX + 1] : - 1,
-        foundEl = false;
+        topCellValue = positionY > 0 ? game.data.field[positionY - 1][positionX] : - 1,
+        bottomCellValue = positionY < game.data.fieldSize.height - 1 ? game.data.field[positionY + 1][positionX] : - 1,
+        leftCellValue = positionX > 0 ? game.data.field[positionY][positionX - 1] : - 1,
+        rightCellValue =  positionX < game.data.fieldSize.width - 1 ? game.data.field[positionY][positionX + 1] : - 1,
+        isSameColorSiblingFound = false;
 
-    if (topBoard >= 0 && centralPoint == topBoard && !game.data.matches[positionX + '_' + (positionY - 1)]) {
-        game.data.matches[positionX + '_' + (positionY - 1)] = {y: positionY - 1, x: positionX};
-        foundEl = true;
+    // todo refactor
+    var siblingsValues = [
+            topCellValue, rightCellValue, bottomCellValue, leftCellValue
+        ],
+        offsets = [
+            {x : 0, y : -1},
+            {x : 1, y : 0},
+            {x : 0, y : 1},
+            {x : -1, y : 0}
+        ];
+
+    for (var i = 0; i < siblingsValues.length; i++) {
+        var siblingValue = siblingsValues[i],
+            siblingOffset = offsets[i],
+            siblingX = positionX + siblingOffset.x,
+            siblingY = positionY + siblingOffset.y,
+            stringKey = (siblingX) + '_' + (siblingY);
+
+        if (centralPoint == siblingValue && !game.data.matches[stringKey]) {
+            game.data.matches[stringKey] = {y: siblingY, x: siblingX};
+            isSameColorSiblingFound = true;
+        }
+
     }
-    if (bottomBoard >= 0 && centralPoint == bottomBoard && !game.data.matches[positionX + '_' + (positionY + 1)]) {
-        game.data.matches[positionX + '_' + (positionY + 1)] = {y: positionY + 1, x: positionX};
-        foundEl = true;
-    }
-    if (leftBoard >= 0 && centralPoint == leftBoard && !game.data.matches[(positionX - 1) + '_' + positionY]) {
-        game.data.matches[(positionX - 1) + '_' + positionY] = {y: positionY, x: positionX - 1};
-        foundEl = true;
-    }
-    if (rightBoard >= 0 && centralPoint == rightBoard && !game.data.matches[(positionX + 1) + '_' + positionY]) {
-        game.data.matches[(positionX + 1) + '_' + positionY] = {y: positionY, x: positionX + 1};
-        foundEl = true;
-    }
-    return foundEl;
+
+//    if (topCellValue >= 0 && centralPoint == topCellValue && !game.data.matches[positionX + '_' + (positionY - 1)]) {
+//        game.data.matches[positionX + '_' + (positionY - 1)] = {y: positionY - 1, x: positionX};
+//        foundEl = true;
+//    }
+//    if (bottomCellValue >= 0 && centralPoint == bottomCellValue && !game.data.matches[positionX + '_' + (positionY + 1)]) {
+//        game.data.matches[positionX + '_' + (positionY + 1)] = {y: positionY + 1, x: positionX};
+//        foundEl = true;
+//    }
+//    if (leftCellValue >= 0 && centralPoint == leftCellValue && !game.data.matches[(positionX - 1) + '_' + positionY]) {
+//        game.data.matches[(positionX - 1) + '_' + positionY] = {y: positionY, x: positionX - 1};
+//        foundEl = true;
+//    }
+//    if (rightCellValue >= 0 && centralPoint == rightCellValue && !game.data.matches[(positionX + 1) + '_' + positionY]) {
+//        game.data.matches[(positionX + 1) + '_' + positionY] = {y: positionY, x: positionX + 1};
+//        foundEl = true;
+//    }
+    return isSameColorSiblingFound;
 }
+
 function checkMatches(x, y) {
-    var flag = true;
+    var checkingFlag = true;
     game.data.matches = [];
     game.data.matches[x + "_" + y] = {x: x, y: y};
 
-    while (flag) {
-        flag = false;
+    while (checkingFlag) {
+        checkingFlag = false;
         for (var i in game.data.matches) {
             if (checkNearEl(game.data.matches[i])) {
-                flag = true;
+                checkingFlag = true;
             }
         }
     }
@@ -145,10 +181,8 @@ function makeFieldAfterMove(elemFirst, elemSecond) {
     game.data.field[elemFirst.y][elemFirst.x] = tempEl;
     fieldPaint();
     checkMatches(elemSecond.x, elemSecond.y);
-    checkMatches(elemFirst.x, elemFirst.y);
+//    checkMatches(elemFirst.x, elemFirst.y);
     makeField(game.data.matches);
-//    shiftAllField();
-//    game.intervalPainter = setInterval(shiftElementsOfField, 300);
 }
 function moveEl(e) {
     var offsetContainer = document.getElementById('field'),
@@ -160,6 +194,7 @@ function moveEl(e) {
         game.data.item.className += " pick";
         game.data.comparingElements.push({x: x, y: y});
         moveNearbyEl.apply(null, game.data.comparingElements);
+//        fieldPaint();
         game.data.item = null;
         game.data.comparingElements = [];
     } else {
@@ -169,8 +204,11 @@ function moveEl(e) {
     }
 }
 function moveNearbyEl(elemFirst, elemSecond) {
-    if (elemFirst.y - 1 == elemSecond.y || elemFirst.y + 1 == elemSecond.y ||
-        elemFirst.x - 1 == elemSecond.x || elemFirst.x + 1 == elemSecond.x) {
+    console.log(elemFirst, elemSecond);
+    if (elemFirst.y - 1 == elemSecond.y && elemFirst.x == elemSecond.x ||
+        elemFirst.y + 1 == elemSecond.y && elemFirst.x == elemSecond.x ||
+        elemFirst.x - 1 == elemSecond.x && elemFirst.y == elemSecond.y ||
+        elemFirst.x + 1 == elemSecond.x && elemFirst.y == elemSecond.y) {
         makeFieldAfterMove(elemFirst, elemSecond);
     }
 }
