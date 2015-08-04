@@ -1,11 +1,7 @@
-var game = {};
-
-game.initialize = function () {
-    game.data = {
-        fieldSize: {
-            width: 10,
-            height: 10
-        },
+var Game = function () {
+    this.data = {
+        width: 10,
+        height: 10,
         field: [],
         gameMap: null,
         matches: {},
@@ -18,70 +14,59 @@ game.initialize = function () {
     }
 };
 
-// todo move functions to prototype
-
-function makeField(obj) {
+Game.prototype.makeField = function (obj) {
     var x,
         y,
         cell;
-    // todo correct check for object
-    if (typeof(obj) === 'object') {
+    if (Object.prototype.toString.call(obj) === "[object Object]") {
         if (Object.keys(obj).length >= 3) {
             for (var i in obj) {
                 cell = obj[i];
                 game.data.field[cell.y][cell.x] = 0;
-                // todo remove redundant calls
-//                fieldPaint();
+                game.fieldPaint();
             }
         }
     } else {
-        for (x = 0; x < game.data.fieldSize.width; x++) {
+        for (x = 0; x < game.data.width; x++) {
             game.data.field[x] = [];
-            for (y = 0; y < game.data.fieldSize.height; y++) {
+            for (y = 0; y < game.data.height; y++) {
                 game.data.field[x][y] = Math.floor(5 * Math.random()) + 1;
             }
         }
     }
-    fieldPaint();
-//    for (x = 0; x < game.data.fieldSize.width; x++) {
-//        game.data.output += "\n";
-//        for (y = 0; y < game.data.fieldSize.height; y++) {
-//            game.data.output += game.data.field[x][y];
-//        }
-////        console.log('output',game.data.output);
-//    }
 
-}
-function shiftElementsOfField() {
+};
+
+Game.prototype.shiftElementsOfField = function () {
     var x,
         y,
-        // todo remove long names
         field = game.data.field,
         fieldHasEmptyCells = false;
-    for (x = 0; x < game.data.fieldSize.width; x++) {
-        for (y = 0; y < game.data.fieldSize.height; y++) {
-            if (game.data.field[y][x] === 0) {
+    for (x = 0; x < game.data.width; x++) {
+        for (y = 0; y < game.data.height; y++) {
+            if (field[y][x] === 0) {
                 fieldHasEmptyCells = true;
                 if (y > 0) {
-                    if (game.data.field[y -1][x] !== 0) {
-                        game.data.field[y][x] = game.data.field[y - 1][x];
-                        game.data.field[y - 1][x] = 0;
+                    if (field[y -1][x] !== 0) {
+                        field[y][x] = field[y - 1][x];
+                        field[y - 1][x] = 0;
                     }
                 } else {
-                    game.data.field[y][x] = Math.floor(5 * Math.random()) + 1;
+                    field[y][x] = Math.floor(5 * Math.random()) + 1;
                 }
             }
         }
     }
     if (fieldHasEmptyCells) {
-        fieldPaint();
+        game.fieldPaint();
     } else {
-        clearInterval(game.intervalPainter);
-//        checkAllField();
+        clearInterval(game.data.intervalPainter);
+//        game.checkAllField();
     }
     return fieldHasEmptyCells;
-}
-function fieldPaint() {
+};
+
+Game.prototype.fieldPaint = function () {
     var i,
         j,
         currentRow,
@@ -91,10 +76,10 @@ function fieldPaint() {
 
     container.innerHTML = "";
 
-    for (i = 0; i < game.data.fieldSize.height; i++) {
+    for (i = 0; i < game.data.height; i++) {
         currentRow = document.createElement('div');
         currentRow.className = 'row';
-        for (j = 0; j < game.data.fieldSize.width; j++) {
+        for (j = 0; j < game.data.width; j++) {
             currentBlock = document.createElement('div');
             currentBlock.className = game.data.colors[game.data.field[i][j]] || 'empty';
             currentRow.appendChild(currentBlock);
@@ -106,18 +91,18 @@ function fieldPaint() {
     game.data.gameMap = document.getElementById('field');
     game.data.gameMap.innerHTML = "";
     game.data.gameMap.appendChild(tmpContainer);
-}
-function checkNearEl(matchesObj) {
+};
+
+Game.prototype.checkNearEl = function (matchesObj) {
     var positionY = matchesObj.y,
         positionX = matchesObj.x,
         centralPoint = game.data.field[positionY][positionX],
         topCellValue = positionY > 0 ? game.data.field[positionY - 1][positionX] : - 1,
-        bottomCellValue = positionY < game.data.fieldSize.height - 1 ? game.data.field[positionY + 1][positionX] : - 1,
+        bottomCellValue = positionY < game.data.height - 1 ? game.data.field[positionY + 1][positionX] : - 1,
         leftCellValue = positionX > 0 ? game.data.field[positionY][positionX - 1] : - 1,
-        rightCellValue =  positionX < game.data.fieldSize.width - 1 ? game.data.field[positionY][positionX + 1] : - 1,
+        rightCellValue =  positionX < game.data.width - 1 ? game.data.field[positionY][positionX + 1] : - 1,
         isSameColorSiblingFound = false;
 
-    // todo refactor
     var siblingsValues = [
             topCellValue, rightCellValue, bottomCellValue, leftCellValue
         ],
@@ -139,52 +124,35 @@ function checkNearEl(matchesObj) {
             game.data.matches[stringKey] = {y: siblingY, x: siblingX};
             isSameColorSiblingFound = true;
         }
-
     }
-
-//    if (topCellValue >= 0 && centralPoint == topCellValue && !game.data.matches[positionX + '_' + (positionY - 1)]) {
-//        game.data.matches[positionX + '_' + (positionY - 1)] = {y: positionY - 1, x: positionX};
-//        foundEl = true;
-//    }
-//    if (bottomCellValue >= 0 && centralPoint == bottomCellValue && !game.data.matches[positionX + '_' + (positionY + 1)]) {
-//        game.data.matches[positionX + '_' + (positionY + 1)] = {y: positionY + 1, x: positionX};
-//        foundEl = true;
-//    }
-//    if (leftCellValue >= 0 && centralPoint == leftCellValue && !game.data.matches[(positionX - 1) + '_' + positionY]) {
-//        game.data.matches[(positionX - 1) + '_' + positionY] = {y: positionY, x: positionX - 1};
-//        foundEl = true;
-//    }
-//    if (rightCellValue >= 0 && centralPoint == rightCellValue && !game.data.matches[(positionX + 1) + '_' + positionY]) {
-//        game.data.matches[(positionX + 1) + '_' + positionY] = {y: positionY, x: positionX + 1};
-//        foundEl = true;
-//    }
     return isSameColorSiblingFound;
-}
+};
 
-function checkMatches(x, y) {
+Game.prototype.checkMatches = function (x, y) {
     var checkingFlag = true;
-    game.data.matches = [];
+    game.data.matches = {};
     game.data.matches[x + "_" + y] = {x: x, y: y};
 
     while (checkingFlag) {
         checkingFlag = false;
         for (var i in game.data.matches) {
-            if (checkNearEl(game.data.matches[i])) {
+            if (game.checkNearEl(game.data.matches[i])) {
                 checkingFlag = true;
             }
         }
     }
-}
-function makeFieldAfterMove(elemFirst, elemSecond) {
+};
+
+Game.prototype.makeFieldAfterMove = function (elemFirst, elemSecond) {
     var tempEl = game.data.field[elemSecond.y][elemSecond.x];
     game.data.field[elemSecond.y][elemSecond.x] = game.data.field[elemFirst.y][elemFirst.x];
     game.data.field[elemFirst.y][elemFirst.x] = tempEl;
-    fieldPaint();
-    checkMatches(elemSecond.x, elemSecond.y);
-//    checkMatches(elemFirst.x, elemFirst.y);
-    makeField(game.data.matches);
-}
-function moveEl(e) {
+    game.fieldPaint();
+    game.checkMatches(elemSecond.x, elemSecond.y);
+    game.makeField(game.data.matches);
+};
+
+Game.prototype.moveEl = function (e) {
     var offsetContainer = document.getElementById('field'),
         x = Math.floor((e.x - offsetContainer.offsetLeft)/20),
         y = Math.floor((e.y - offsetContainer.offsetTop)/20);
@@ -193,8 +161,8 @@ function moveEl(e) {
         game.data.item = e.target;
         game.data.item.className += " pick";
         game.data.comparingElements.push({x: x, y: y});
-        moveNearbyEl.apply(null, game.data.comparingElements);
-//        fieldPaint();
+        game.moveNearbyEl.apply(null, game.data.comparingElements);
+        game.fieldPaint();
         game.data.item = null;
         game.data.comparingElements = [];
     } else {
@@ -202,42 +170,44 @@ function moveEl(e) {
         game.data.item.className += " pick";
         game.data.comparingElements.push({x: x, y: y});
     }
-}
-function moveNearbyEl(elemFirst, elemSecond) {
+};
+
+Game.prototype.moveNearbyEl = function (elemFirst, elemSecond) {
     console.log(elemFirst, elemSecond);
     if (elemFirst.y - 1 == elemSecond.y && elemFirst.x == elemSecond.x ||
         elemFirst.y + 1 == elemSecond.y && elemFirst.x == elemSecond.x ||
         elemFirst.x - 1 == elemSecond.x && elemFirst.y == elemSecond.y ||
         elemFirst.x + 1 == elemSecond.x && elemFirst.y == elemSecond.y) {
-        makeFieldAfterMove(elemFirst, elemSecond);
+        game.makeFieldAfterMove(elemFirst, elemSecond);
     }
-}
-function crushEl(e) {
+};
+
+Game.prototype.crushEl = function (e) {
     var offsetContainer = document.getElementById('field'),
         clickX = Math.floor((e.x - offsetContainer.offsetLeft)/20),
         clickY = Math.floor((e.y - offsetContainer.offsetTop)/20);
-    checkMatches(clickX, clickY);
-    makeField(game.data.matches);
-    shiftElementsOfField();
-}
-function checkAllField() {
+    game.checkMatches(clickX, clickY);
+    game.makeField(game.data.matches);
+    this.shiftElementsOfField();
+};
+
+Game.prototype.checkAllField = function () {
     var x, y;
-    for (x = 0; x < game.data.fieldSize.width; x++) {
-        for (y = 0; y < game.data.fieldSize.height; y++) {
-            checkMatches(x, y);
-            makeField(game.data.matches);
+    for (x = 0; x < game.data.width; x++) {
+        for (y = 0; y < game.data.height; y++) {
+            game.checkMatches(x, y);
+            game.makeField(game.data.matches);
         }
     }
-    game.intervalPainter = setInterval(shiftElementsOfField, 200);
-}
+    game.data.intervalPainter = setInterval(game.shiftElementsOfField, 200);
+};
 
-game.initialize();
-makeField();
-fieldPaint();
-//checkAllField();
+var game = new Game();
+game.makeField();
+game.fieldPaint();
+game.checkAllField();
 
 document.querySelector('#field').addEventListener('click', function (e) {
-    crushEl(e);
-    moveEl(e);
-    game.intervalPainter = setInterval(shiftElementsOfField, 200);
+    game.crushEl(e);
+    game.moveEl(e);
 }, false);
