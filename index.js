@@ -34,7 +34,6 @@ Game.prototype.makeField = function (obj) {
             }
         }
     }
-
 };
 
 Game.prototype.shiftElementsOfField = function () {
@@ -61,7 +60,7 @@ Game.prototype.shiftElementsOfField = function () {
         game.fieldPaint();
     } else {
         clearInterval(game.data.intervalPainter);
-//        game.checkAllField();
+        game.checkAllField();
     }
     return fieldHasEmptyCells;
 };
@@ -173,12 +172,16 @@ Game.prototype.moveEl = function (e) {
 };
 
 Game.prototype.moveNearbyEl = function (elemFirst, elemSecond) {
-    console.log(elemFirst, elemSecond);
-    if (elemFirst.y - 1 == elemSecond.y && elemFirst.x == elemSecond.x ||
-        elemFirst.y + 1 == elemSecond.y && elemFirst.x == elemSecond.x ||
-        elemFirst.x - 1 == elemSecond.x && elemFirst.y == elemSecond.y ||
-        elemFirst.x + 1 == elemSecond.x && elemFirst.y == elemSecond.y) {
-        game.makeFieldAfterMove(elemFirst, elemSecond);
+    var nearbyElement = [
+        elemFirst.y - 1 == elemSecond.y && elemFirst.x == elemSecond.x,
+        elemFirst.y + 1 == elemSecond.y && elemFirst.x == elemSecond.x,
+        elemFirst.x - 1 == elemSecond.x && elemFirst.y == elemSecond.y,
+        elemFirst.x + 1 == elemSecond.x && elemFirst.y == elemSecond.y
+    ];
+    for (var i = 0; i < nearbyElement.length; i++) {
+        if (nearbyElement[i]) {
+            game.makeFieldAfterMove(elemFirst, elemSecond);
+        }
     }
 };
 
@@ -205,7 +208,7 @@ Game.prototype.checkAllField = function () {
 var game = new Game();
 game.makeField();
 game.fieldPaint();
-game.checkAllField();
+//game.checkAllField();
 
 document.querySelector('#field').addEventListener('click', function (e) {
     game.crushEl(e);
